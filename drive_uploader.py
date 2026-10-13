@@ -57,6 +57,21 @@ def get_or_create_folder(folder_name, parent_id=None):
     folder = service.files().create(body=metadata, fields='id').execute()
     return folder.get('id')
 
+def get_free_space_mb():
+    """Kiểm tra dung lượng còn trống trên Google Drive (đơn vị MB)."""
+    try:
+        service = get_drive_service()
+        about = service.about().get(fields="storageQuota").execute()
+        quota = about.get("storageQuota", {})
+        limit = int(quota.get("limit", 0))
+        usage = int(quota.get("usage", 0))
+        if limit == 0:
+            return 999999.0
+        return (limit - usage) / (1024 * 1024)
+    except Exception as e:
+        print(f"Lỗi kiểm tra dung lượng Drive: {e}")
+        return 999999.0
+
 def upload_file(local_path, folder_id=None):
     """Upload một file lên Google Drive và trả về file_id, web_link."""
     if not os.path.exists(local_path):

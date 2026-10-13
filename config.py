@@ -2,7 +2,7 @@ ANHMOE_API_KEY = "chv_pqYs_31b5ab2fdf61acc3b217b0a5e6a53336cad60a3cd3addc9bd8493
 SHEET_ID = "14tqKftTqlesnb0NqJZU-_f1EsWWywYqO36NiuDdmaTo"       # ID của Google Sheet
 DROPBOX_FOLDER_PATH = "/Shorts"                              # Thư mục lưu trữ trên Dropbox
 
-# CHỈ UPLOAD LÊN LEHUNGPHARMACIST (KHÔNG ĐẨY SANG LEHUNGHUP)
+# Tận dụng dung lượng trống trên cả 2 tài khoản Dropbox
 DROPBOX_ACCOUNTS = [
     {
         "name": "Tài khoản lehungpharmacist@gmail.com",
@@ -10,11 +10,7 @@ DROPBOX_ACCOUNTS = [
         "app_key": "mkowbqfz4ykqh6f",
         "app_secret": "j8288shsvjf6bg0",
         "refresh_token": "-WxNmq_vnZkAAAAAAAAAATV1UHUizL691UMSe2c0FWiFTyXH0hFyg_fu4bpBWrGn"
-    }
-]
-
-# Tài khoản lưu trữ cũ (chỉ dùng để dọn dẹp file khi đã đăng)
-CLEANUP_ACCOUNTS = [
+    },
     {
         "name": "Tài khoản lehunghup@gmail.com",
         "email": "lehunghup@gmail.com",
@@ -23,6 +19,8 @@ CLEANUP_ACCOUNTS = [
         "refresh_token": "p-ZJQ2Ji9aoAAAAAAAAAAUwKjZIa7LoaLtKID9_Uk1p_wdfdjr2-Ea6d2raWNrsB"
     }
 ]
+
+CLEANUP_ACCOUNTS = []
 
 # Tương thích ngược với các hàm đơn lẻ
 DROPBOX_APP_KEY = DROPBOX_ACCOUNTS[0]["app_key"]

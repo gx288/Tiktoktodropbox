@@ -1,10 +1,11 @@
 # Credentials & Tokens (BẢO MẬT TUYỆT ĐỐI)
 credentials.json
 client_secret.json
-token.json
+token*.json
 oauth-credentials.json
 drive-credentials.json
 refreshtokendropbox
+backup*.json
 *.key
 *.pem
 *.token

@@ -96,32 +96,14 @@ def resolve_tiktok_channel_url(url):
 # ====================== CHANNEL CONFIG ======================
 CHANNEL_CONFIGS = [
     {
-        "url": "https://youtube.com/shorts/_P13akdxLcc",
+        "url": "https://www.youtube.com/@Aceshort-pro1/shorts",
         "platform": "youtube",
         "start_date": "2020-01-01",
-        "name": "YouTube Short _P13akdxLcc"
-    },
-    {
-        "url": "https://www.youtube.com/@youtubelovethreads/shorts",
-        "platform": "youtube",
-        "start_date": "2020-01-01",
-        "name": "YouTube @youtubelovethreads"
-    },
-    {
-        "url": "https://www.youtube.com/@VGbrands/shorts",
-        "platform": "youtube",
-        "start_date": "2020-01-01",
-        "name": "YouTube @VGbrands"
-    },
-    {
-        "url": "https://www.youtube.com/@chuyentramkem/shorts",
-        "platform": "youtube",
-        "start_date": "2020-01-01",
-        "name": "YouTube @chuyentramkem"
+        "name": "YouTube @Aceshort-pro1"
     }
 ]
 
-SHEET_NAME = "Reels2"
+SHEET_NAME = "Reels"
 
 
 def get_credentials():
@@ -199,25 +181,10 @@ def switch_to_next_account():
         if current_account_idx + 1 < len(DROPBOX_ACCOUNTS):
             current_account_idx += 1
             new_acc = DROPBOX_ACCOUNTS[current_account_idx]
-            msg = (
-                f"⚠️ [DROPBOX ĐẦY DUNG LƯỢNG]\n"
-                f"Tài khoản '{old_acc['name']}' ({old_acc['email']}) đã hết/gần hết dung lượng lưu trữ!\n"
-                f"➡️ Đã tự động chuyển sang '{new_acc['name']}' ({new_acc['email']}) để tiếp tục lưu video mới."
-            )
-            print("\n" + "=" * 60)
-            print(msg)
-            print("=" * 60 + "\n")
-            notify_telegram(msg)
+            print(f"\n⚠️ [DROPBOX] '{old_acc['name']}' gần đầy -> Chuyển sang '{new_acc['name']}'")
             return True
         else:
-            msg = (
-                f"🚨 [THÔNG BÁO] Tài khoản Dropbox '{old_acc['email']}' đã đầy dung lượng!\n"
-                f"Hệ thống tạm dừng tải để tránh lỗi. Sẽ KHÔNG đẩy sang tài khoản lehunghup theo đúng yêu cầu."
-            )
-            print("\n" + "=" * 60)
-            print(msg)
-            print("=" * 60 + "\n")
-            notify_telegram(msg)
+            print(f"\n⚠️ [DROPBOX] Tất cả tài khoản Dropbox đã hết dung lượng trống.")
             return False
 
 # ====================== DỌN DẸP ======================
@@ -505,14 +472,82 @@ def upload_to_gdrive(video_path, video_id):
     return ""
 
 
+storage_full_alerted = False
+storage_pause_flag = False
+storage_lock = threading.Lock()
+
 def upload_video_file(video_path, video_id):
-    if STORAGE_BACKEND == "gdrive":
-        return upload_to_gdrive(video_path, video_id)
-    else:
-        return upload_to_dropbox(video_path, video_id)
+    global storage_full_alerted, storage_pause_flag
+    if storage_pause_flag:
+        return ""
+
+    file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+
+    # 1. Tận dụng Dropbox trống trước (lần lượt từng tài khoản Dropbox)
+    for acc in DROPBOX_ACCOUNTS:
+        try:
+            free_dbx = check_account_free_space_mb(acc)
+            if free_dbx > (file_size_mb + 10):
+                print(f"   ☁️ [Dropbox] {acc['name']} (Còn {free_dbx:.1f} MB) -> Đang upload...")
+                dbx = get_dropbox_client(acc)
+                path = f"{DROPBOX_FOLDER_PATH}/{video_id}.mp4"
+                with open(video_path, "rb") as f:
+                    dbx.files_upload(f.read(), path, mode=dropbox.files.WriteMode("overwrite"))
+                link = dbx.sharing_create_shared_link_with_settings(path).url
+                direct_link = link.replace("www.dropbox.com", "dl.dropboxusercontent.com")
+                direct_link = re.sub(r'([?&])dl=0', r'\1dl=1', direct_link)
+                return direct_link
+        except dropbox.exceptions.ApiError as ae:
+            if "shared_link_already_exists" in str(ae):
+                try:
+                    links = dbx.sharing_list_shared_links(path=path).links
+                    if links:
+                        direct_link = links[0].url.replace("www.dropbox.com", "dl.dropboxusercontent.com")
+                        direct_link = re.sub(r'([?&])dl=0', r'\1dl=1', direct_link)
+                        return direct_link
+                except:
+                    pass
+            print(f"   ⚠️ Dropbox ({acc['email']}) không đủ dung lượng hoặc lỗi: {ae}")
+        except Exception as e:
+            print(f"   ⚠️ Dropbox ({acc['email']}) lỗi: {e}")
+
+    # 2. Nếu Dropbox đã đầy, chuyển sang Google Drive 15GB
+    try:
+        import drive_uploader
+        free_drive = drive_uploader.get_free_space_mb()
+        if free_drive > (file_size_mb + 50):
+            print(f"   📁 [Google Drive] (Còn trống {free_drive:.1f} MB) -> Đang upload Drive...")
+            return upload_to_gdrive(video_path, video_id)
+    except Exception as gde:
+        print(f"   ⚠️ Lỗi kiểm tra/upload Drive: {gde}")
+
+    # 3. Cả Dropbox và Google Drive đều hết dung lượng -> Tạm dừng và báo Telegram 1 lần duy nhất
+    with storage_lock:
+        if not storage_full_alerted:
+            storage_full_alerted = True
+            storage_pause_flag = True
+            free_drive_str = f"{free_drive:.1f} MB" if 'free_drive' in locals() else "hết"
+            msg = (
+                f"🚨 [CẢNH BÁO BỘ NHỚ ĐẦY]\n"
+                f"Cả Dropbox và Google Drive đều không còn đủ dung lượng để lưu video tiếp theo ({file_size_mb:.1f} MB)!\n"
+                f"- Dropbox: Đã đầy dung lượng trống\n"
+                f"- Google Drive: Còn {free_drive_str}\n"
+                f"➡️ Hệ thống ĐÃ TỰ ĐỘNG TẠM NGỪNG để tránh lỗi và không spam thông báo."
+            )
+            print("\n" + "=" * 60)
+            print(msg)
+            print("=" * 60 + "\n")
+            notify_telegram(msg)
+        else:
+            storage_pause_flag = True
+
+    return ""
 
 
 def download_and_upload_video(video, idx=0, total=0):
+    global storage_pause_flag
+    if storage_pause_flag:
+        return
     tag = f"[{idx}/{total}] " if total > 0 else ""
     print(f"{tag}Đang tải: {video['title'][:70]}...")
     try:
@@ -706,23 +741,27 @@ def main():
                 futures = [executor.submit(download_and_upload_video, v, i, tot) for i, v in enumerate(target_pending, 1)]
                 concurrent.futures.wait(futures)
 
-        print("\n=== QUÉT KÊNH MỚI ===")
-        videos = fetch_all_metadata()
-        existing = {v.strip() for v in gspread.authorize(get_credentials())
-                                       .open_by_key(SHEET_ID).worksheet(SHEET_NAME).col_values(5)[1:]}
-        new_videos = save_metadata_to_sheets(videos, existing)
+        if not storage_pause_flag:
+            print("\n=== QUÉT KÊNH MỚI ===")
+            videos = fetch_all_metadata()
+            existing = {v.strip() for v in gspread.authorize(get_credentials())
+                                           .open_by_key(SHEET_ID).worksheet(SHEET_NAME).col_values(5)[1:]}
+            new_videos = save_metadata_to_sheets(videos, existing)
 
-        if new_videos:
-            target_new = new_videos[:limit]
-            tot = len(target_new)
-            print(f"\n🚀 Đang tải và upload {tot} video mới với {MAX_WORKERS} luồng đồng thời...")
-            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                futures = [executor.submit(download_and_upload_video, v, i, tot) for i, v in enumerate(target_new, 1)]
-                concurrent.futures.wait(futures)
+            if new_videos and not storage_pause_flag:
+                target_new = new_videos[:limit]
+                tot = len(target_new)
+                print(f"\n🚀 Đang tải và upload {tot} video mới với {MAX_WORKERS} luồng đồng thời...")
+                with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                    futures = [executor.submit(download_and_upload_video, v, i, tot) for i, v in enumerate(target_new, 1)]
+                    concurrent.futures.wait(futures)
 
-        finish_msg = "🎉 [HOÀN THÀNH TẤT CẢ]\nĐã tải và upload toàn bộ video TikTok lên Dropbox và Google Sheet thành công!"
-        print(f"\n=== {finish_msg} ===")
-        notify_telegram(finish_msg)
+        if storage_pause_flag:
+            print("\n⚠️ [TẠM DỪNG] Hệ thống tạm ngừng do dung lượng Cloud đã đầy.")
+        else:
+            finish_msg = "🎉 [HOÀN THÀNH TẤT CẢ]\nĐã tải và upload video YouTube Shorts lên Cloud và Google Sheet thành công!"
+            print(f"\n=== {finish_msg} ===")
+            notify_telegram(finish_msg)
     except Exception as e:
         print(f"Lỗi lớn: {traceback.format_exc()}")
 
