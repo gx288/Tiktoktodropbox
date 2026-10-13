@@ -1,0 +1,31 @@
+# Credentials & Tokens (BẢO MẬT TUYỆT ĐỐI)
+credentials.json
+client_secret.json
+token.json
+oauth-credentials.json
+drive-credentials.json
+refreshtokendropbox
+*.key
+*.pem
+*.token
+.env
+
+# Thư mục tạm và video
+temp/
+temp_test/
+test_tiktok_downloads/
+*.mp4
+*.mkv
+*.webm
+
+# Build & Cache
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.spec
+
+# Log files
+*.log
+app_run_log.txt
