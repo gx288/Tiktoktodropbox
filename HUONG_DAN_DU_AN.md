@@ -123,3 +123,44 @@ Toàn bộ dự án đã được khởi tạo Git (`git init`) và commit ban �
    git branch -M main
    git push -u origin main
    ```
+
+---
+
+## 6. 🚀 HƯỚNG DẪN MỞ RỘNG THÊM TÀI KHOẢN GOOGLE DRIVE (TĂNG DUNG LƯỢNG MIỄN PHÍ)
+
+### A. Cơ chế mở rộng đa tài khoản (Multi-Drive Storage Pool):
+* Toàn bộ các nick Google phụ/mới đều **dùng chung file cấu hình `client_secret.json` hiện tại** (Project `fb-storage-511417` với tên miền xác thực `https://comil.site`). Bạn **không cần tạo lại app Google Cloud hay cài lại website gì cả**.
+* Mỗi nick Gmail thêm vào mang lại thêm **+15GB Google Drive** hoàn toàn miễn phí.
+* Chế độ **In Production** cho phép tối đa 100 tài khoản kết nối.
+
+### B. Quy chuẩn đặt tên file Token:
+* Tài khoản 1 (mặc định): `token.json` (email `lehungpharmacist5@gmail.com`)
+* Tài khoản 2: `token_drive2.json`
+* Tài khoản 3: `token_drive3.json`
+* *(Tất cả các file `token*.json` đã được khai báo trong `.gitignore`, đảm bảo an toàn 100% khi đẩy code lên GitHub).*
+
+### C. Cách lấy Token cho tài khoản mới (Chỉ mất 30 giây):
+Chạy lệnh sau tại thư mục dự án:
+```powershell
+cd D:\AT\Tiktoktodropbox
+
+# Lấy token cho tài khoản số 2:
+python get_token.py --output token_drive2.json
+
+# Hoặc lấy token cho tài khoản số 3:
+python get_token.py --output token_drive3.json
+```
+Trình duyệt sẽ mở ra:
+1. Đăng nhập nick Google thứ 2 (hoặc thứ 3).
+2. Bấm **Nâng cao (Advanced)** $\rightarrow$ **Đi tiếp tới MyDrive (không an toàn)**.
+3. Tích chọn đủ 2 quyền Drive & Sheets $\rightarrow$ Bấm **Tiếp tục**.
+4. File token Production vĩnh viễn mới sẽ được tạo ngay lập tức.
+
+### D. Cách sử dụng Token mới trong Code:
+* **Gán cho script bất kỳ:** Khi khởi tạo `GoogleDriveUploader`, chỉ cần truyền tham số `token_file='token_drive2.json'`:
+  ```python
+  from drive_uploader import GoogleDriveUploader
+  uploader = GoogleDriveUploader(token_file='token_drive2.json')
+  ```
+* **Chế độ tự động luân phiên (Multi-Drive Pool):**
+  Hệ thống kiểm tra dung lượng còn lại của Drive 1: nếu dung lượng khả dụng $< 500$ MB $\rightarrow$ tự động switch sang `token_drive2.json` để tiếp tục upload.
