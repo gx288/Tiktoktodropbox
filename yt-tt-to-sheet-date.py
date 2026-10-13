@@ -665,6 +665,14 @@ def download_and_upload_video(video, idx=0, total=0):
                         video_url
                     ]
                     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                    if "429" in result.stderr or "robot" in result.stderr.lower() or "bot" in result.stderr.lower():
+                        with storage_lock:
+                            if not storage_full_alerted:
+                                storage_full_alerted = True
+                                storage_pause_flag = True
+                                print(f"\n⚠️ {tag}YouTube phát hiện tải nhanh và tạm thời giới hạn IP (HTTP 429 / Bot check).")
+                                print("➡️ Hệ thống đã TỰ ĐỘNG TẠM NGỪNG để IP hạ nhiệt (không spam request).\n")
+                        break
                     for ext in ["mp4", "mkv", "webm"]:
                         tmp = f"temp/{video_id}.{ext}"
                         if os.path.exists(tmp):
