@@ -5,6 +5,12 @@ on:
     # Chạy tự động mỗi 30 phút
     - cron: '*/30 * * * *'
   workflow_dispatch: # Cho phép người dùng bấm nút chạy thủ công bất cứ lúc nào
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - 'index.html'
 
 permissions:
   contents: write
