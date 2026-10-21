@@ -25,6 +25,7 @@ os.chdir(BASE_DIR)
 from config import SHEET_ID, DROPBOX_ACCOUNTS, CLEANUP_ACCOUNTS, DROPBOX_FOLDER_PATH, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 TARGET_SHEETS = ["Reels", "Reels2", "Reels3"]
+PROTECTED_SHEETS = ["Prother"]
 
 def get_sheets_client():
     creds_path = os.path.join(BASE_DIR, "credentials.json")
@@ -65,6 +66,10 @@ def notify_telegram(message):
         print(f"   [Telegram Error] {e}")
 
 def clean_sheet_posted_files(ss, sheet_name, drive_service):
+    if sheet_name in PROTECTED_SHEETS:
+        print(f"🔒 [BẢO VỆ TUYỆT ĐỐI] Sheet '{sheet_name}' nằm trong danh sách cấm xóa vĩnh viễn!")
+        return 0, 0
+
     try:
         sheet = ss.worksheet(sheet_name)
     except Exception:
@@ -91,6 +96,9 @@ def clean_sheet_posted_files(ss, sheet_name, drive_service):
         yt_link = str(row.get("link youtube videos", "")).strip()
         title = str(row.get("Title", "Untitled"))[:40]
 
+        if "prother" in title.lower() or "prother" in link_file.lower():
+            continue
+
         is_posted = bool(da_dang or (link_fb and "facebook.com" in link_fb.lower()))
 
         if is_posted and da_xoa != "đã xóa":
@@ -102,20 +110,18 @@ def clean_sheet_posted_files(ss, sheet_name, drive_service):
                 m = re.search(r'id=([a-zA-Z0-9_-]+)', link_file) or re.search(r'/d/([a-zA-Z0-9_-]+)', link_file)
                 if m:
                     file_id = m.group(1)
-                    if drive_service:
-                        try:
-                            drive_service.files().delete(fileId=file_id).execute()
-                            print(f"   🗑️ [Google Drive] Đã xóa: {title} (ID: {file_id})")
+                    try:
+                        import drive_uploader
+                        ok, token_used = drive_uploader.delete_file_from_any_drive(file_id)
+                        if ok:
+                            print(f"   🗑️ [Google Drive - {token_used}] Đã xóa: {title} (ID: {file_id})")
                             gdrive_deleted += 1
                             deleted_ok = True
-                        except HttpError as he:
-                            if he.resp.status == 404:
-                                print(f"   ℹ️ [Google Drive] File không còn trên Drive: {title}")
-                                deleted_ok = True
-                            else:
-                                print(f"   ❌ [Google Drive] Lỗi xóa {file_id}: {he}")
-                        except Exception as e:
-                            print(f"   ❌ [Google Drive] Lỗi: {e}")
+                        else:
+                            print(f"   ℹ️ [Google Drive] Không tìm thấy file hoặc đã bị xóa trước: {title}")
+                            deleted_ok = True
+                    except Exception as e:
+                        print(f"   ❌ [Google Drive] Lỗi: {e}")
 
             # 2. Nếu là file Dropbox
             elif "dropbox" in link_file or (not link_file and video_id):

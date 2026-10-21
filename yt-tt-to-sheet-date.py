@@ -451,17 +451,13 @@ gdrive_folder_id = None
 gdrive_lock = threading.Lock()
 
 def upload_to_gdrive(video_path, video_id):
-    """Upload video lên Google Drive và trả về direct download link cho Make.com"""
-    global gdrive_folder_id
+    """Upload video lên Google Drive (Multi-Drive) và trả về direct download link cho Make.com"""
     for attempt in range(RETRY_ATTEMPTS):
         try:
             import drive_uploader
-            with gdrive_lock:
-                if not gdrive_folder_id:
-                    gdrive_folder_id = drive_uploader.get_or_create_folder(GDRIVE_FOLDER_NAME)
             file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
             print(f"   📁 Google Drive: Thư mục '{GDRIVE_FOLDER_NAME}' - File: {file_size_mb:.2f} MB")
-            res = drive_uploader.upload_file(video_path, folder_id=gdrive_folder_id)
+            res = drive_uploader.upload_file(video_path, folder_name=GDRIVE_FOLDER_NAME)
             file_id = res['id']
             # Link direct download cho Make.com (<100MB tải trực tiếp video/mp4 HTTP 200)
             direct_link = f"https://drive.google.com/uc?export=download&id={file_id}"
@@ -482,6 +478,28 @@ def upload_video_file(video_path, video_id):
         return ""
 
     file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+
+    # Nếu chọn lưu trữ mặc định là Google Drive
+    if STORAGE_BACKEND == "gdrive":
+        link = upload_to_gdrive(video_path, video_id)
+        if link:
+            return link
+        with storage_lock:
+            if not storage_full_alerted:
+                storage_full_alerted = True
+                storage_pause_flag = True
+                msg = (
+                    f"🚨 [CẢNH BÁO BỘ NHỚ ĐẦY]\n"
+                    f"Tất cả tài khoản Google Drive đều không thể upload video ({file_size_mb:.1f} MB)!\n"
+                    f"➡️ Hệ thống ĐÃ TỰ ĐỘNG TẠM NGỪNG để tránh lỗi."
+                )
+                print("\n" + "=" * 60)
+                print(msg)
+                print("=" * 60 + "\n")
+                notify_telegram(msg)
+            else:
+                storage_pause_flag = True
+        return ""
 
     # 1. Tận dụng Dropbox trống trước (lần lượt từng tài khoản Dropbox)
     for acc in DROPBOX_ACCOUNTS:
@@ -649,13 +667,14 @@ def download_and_upload_video(video, idx=0, total=0):
 
         # ==================== YOUTUBE ====================
         else:
-            if not os.path.exists(video_path):
+            if os.path.exists(video_path) and os.path.getsize(video_path) > 20_000:
+                downloaded = True
+            else:
                 for fmt in [PRIMARY_FORMAT, FALLBACK_FORMAT]:
                     cmd = [
                         YTDLP_BIN,
-                        '--impersonate', 'chrome',
                         '--js-runtimes', f"node:{NODE_PATH}",
-                        '--extractor-args', 'youtube:lang=vi',
+                        '--extractor-args', 'youtube:player_client=android,web;lang=vi',
                         '--add-header', 'Accept-Language:vi-VN,vi;q=0.9,en;q=0.8',
                         '-f', fmt,
                         '--merge-output-format', 'mp4',
@@ -665,7 +684,7 @@ def download_and_upload_video(video, idx=0, total=0):
                         video_url
                     ]
                     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-                    if "429" in result.stderr or "robot" in result.stderr.lower() or "bot" in result.stderr.lower():
+                    if "429" in result.stderr or "robot" in result.stderr.lower() or "sign in to confirm you're not a bot" in result.stderr.lower():
                         with storage_lock:
                             if not storage_full_alerted:
                                 storage_full_alerted = True
@@ -732,6 +751,46 @@ def download_and_upload_video(video, idx=0, total=0):
         print(f"   {tag}✗ Lỗi: {e}")
 
 
+
+
+def reorder_sheet_rows(sheet_name=SHEET_NAME):
+    """
+    Sắp xếp lại sheet:
+    - Các dòng có Link file hợp lệ (sẵn sàng đăng Reels) đưa lên ĐẦU.
+    - Các dòng không tải được / lỗi / >90MB / chưa có link đưa xuống CUỐI để Make.com không bị lỗi.
+    """
+    print(f"\n🔄 Đang sắp xếp lại thứ tự dòng trong sheet '{sheet_name}'...")
+    try:
+        sheet = gspread.authorize(get_credentials()).open_by_key(SHEET_ID).worksheet(sheet_name)
+        rows = sheet.get_all_values()
+        if len(rows) <= 1:
+            return
+        
+        header = rows[0]
+        data_rows = [r for r in rows[1:] if any(r)]
+        
+        valid_rows = []
+        pending_failed_rows = []
+        
+        for r in data_rows:
+            link_file = r[1].strip() if len(r) > 1 else ""
+            over_90 = r[9].strip() if len(r) > 9 else ""
+            
+            # Tiêu chí dòng hợp lệ: có link file, không phải 'bỏ qua', không phải >90MB
+            if link_file and not link_file.lower().startswith("bỏ qua") and ">90" not in over_90:
+                valid_rows.append(r)
+            else:
+                pending_failed_rows.append(r)
+                
+        sorted_rows = [header] + valid_rows + pending_failed_rows
+        max_cols = max(len(r) for r in sorted_rows)
+        padded_rows = [r + [""] * (max_cols - len(r)) for r in sorted_rows]
+        
+        sheet.update(range_name="A1", values=padded_rows, value_input_option="USER_ENTERED")
+        print(f"✔ Đã sắp xếp xong: {len(valid_rows)} dòng có link ở đầu, {len(pending_failed_rows)} dòng chưa có link/lỗi ở cuối.")
+    except Exception as e:
+        print(f"Lỗi khi sắp xếp sheet: {e}")
+
 def main():
     print(f"=== YouTube & TikTok Auto Downloader Started (ĐA LUỒNG: {MAX_WORKERS} Workers) ===")
     try:
@@ -769,6 +828,7 @@ def main():
         else:
             finish_msg = "🎉 [HOÀN THÀNH TẤT CẢ]\nĐã tải và upload video YouTube Shorts lên Cloud và Google Sheet thành công!"
             print(f"\n=== {finish_msg} ===")
+            reorder_sheet_rows(SHEET_NAME)
             notify_telegram(finish_msg)
     except Exception as e:
         print(f"Lỗi lớn: {traceback.format_exc()}")

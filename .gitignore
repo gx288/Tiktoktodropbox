@@ -2,6 +2,8 @@
 credentials.json
 client_secret.json
 token*.json
+tokens/
+PROJECT_SECRETS_BASE64.txt
 oauth-credentials.json
 drive-credentials.json
 refreshtokendropbox
@@ -15,6 +17,9 @@ backup*.json
 temp/
 temp_test/
 test_tiktok_downloads/
+backups/
+legacy/
+tests/
 *.mp4
 *.mkv
 *.webm

@@ -27,18 +27,34 @@ def main():
     args = parser.parse_args()
 
     output_file = args.output
+    # Tự động lưu vào thư mục tokens/ nếu chưa chỉ định thư mục
+    if not os.path.dirname(output_file):
+        tokens_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tokens")
+        if not os.path.exists(tokens_dir):
+            tokens_dir = "tokens"
+        output_file = os.path.join(tokens_dir, output_file)
+        
     print("=" * 60)
     print("🚀 BẮT ĐẦU QUÁ TRÌNH LẤY TOKEN GOOGLE DRIVE / SHEETS VĨNH VIỄN")
     print(f"📁 File token sẽ được lưu vào: {output_file}")
     print("=" * 60)
     
-    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+    secret_path = "client_secret.json"
+    if not os.path.exists(secret_path):
+        secret_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "client_secret.json")
     
-    print("\n👉 Đang mở trình duyệt để bạn đăng nhập tài khoản Gmail...")
-    print("👉 Hãy chọn tài khoản Gmail (bất kỳ tài khoản nào muốn cấp thêm dung lượng).")
-    print("👉 Bấm: 'Nâng cao' (Advanced) -> 'Đi tới MyDrive (không an toàn)' -> Tích chọn các quyền -> Bấm 'Tiếp tục' (Continue).\n")
+    flow = InstalledAppFlow.from_client_secrets_file(secret_path, SCOPES)
     
-    creds = flow.run_local_server(port=8080, prompt='select_account consent', access_type='offline')
+    prompt_msg = (
+        "\n🔗 LINK XÁC THỰC (Nếu trình duyệt mở sai cửa sổ, hãy COPY link này dán vào đúng cửa sổ Chrome bạn đã đăng nhập sẵn nick):\n"
+        "{url}\n"
+    )
+    creds = flow.run_local_server(
+        port=0,
+        prompt='select_account consent',
+        access_type='offline',
+        authorization_prompt_message=prompt_msg
+    )
     
     with open(output_file, 'w', encoding='utf-8') as token_file:
         token_file.write(creds.to_json())

@@ -29,14 +29,19 @@ Xây dựng pipeline tự động hóa từ đầu đến cuối (End-to-End Aut
    - File tải lên Drive PHẢI set permission `anyone with link can view` để Make.com không bị chặn 403.
 3. **Cột J (>90MB):**
    - Video tải lên Facebook Reels bị giới hạn dung lượng. Nếu file $> 90$ MB, bỏ qua hoặc đánh dấu `>90MB` ở cột J.
+4. **BẢO VỆ TUYỆT ĐỐI SHEET VÀ THƯ MỤC `Prother`:**
+   - Sheet `Prother` chứa các video tư liệu y học & dinh dưỡng lâm sàng cố định của khách hàng.
+   - Thư mục Google Drive `Prother` (ID: `1OxL3LrMqqr5qReTSPcgE8UeSudaU7QlJ`) là thư mục độc lập, **TUYỆT ĐỐI CẤM XÓA**.
+   - Các script dọn dẹp (`auto_clean_posted.py`) chỉ được quét và xóa trên 3 sheet: `Reels`, `Reels2`, `Reels3`. Cấm xóa bất kỳ file nào thuộc sheet hoặc thư mục `Prother`.
 
 ---
 
 ## 3. 🏗️ KIẾN TRÚC HỆ THỐNG & CÁC SCRIPT CHÍNH
 
 ### A. Tải & Đồng bộ Video:
-* `yt-tt-to-sheet-date.py`: Script chính tải video từ TikTok / YouTube Shorts, upload lên Drive và cập nhật Google Sheet.
-* `drive_uploader.py`: Module upload file lên Google Drive, tự động refresh token, set quyền công khai và trả về link direct download.
+* `yt-tt-to-sheet-date.py`: Script chính tải video từ TikTok / YouTube Shorts (ưu tiên âm thanh tiếng Việt), upload lên Google Drive Multi-Pool và cập nhật Google Sheet `Reels`.
+* `drive_uploader.py`: Module upload file lên Google Drive, hỗ trợ Multi-Drive Storage Pool, thread-safe, tự động chuyển tài khoản khi dung lượng < 500MB, cấp quyền công khai và trả về link direct download.
+* `sap_xep_sheet.py`: Sắp xếp các dòng trong sheet: video có link hợp lệ lên đầu (sẵn sàng cho Make.com đăng Reels), video lỗi / trống / >90MB xuống cuối.
 
 ### B. Dọn dẹp tự động (Cloud Cleaner):
 * `auto_clean_posted.py`: Quét 3 sheet (`Reels`, `Reels2`, `Reels3`), tìm các dòng đã đăng (Cột F có dữ liệu hoặc Cột I có link Facebook), xóa file trên Google Drive / Dropbox, đánh dấu Cột G là "Đã xóa" và gửi báo cáo Telegram.
@@ -47,6 +52,14 @@ Xây dựng pipeline tự động hóa từ đầu đến cuối (End-to-End Aut
 ### C. Quản lý Token & OAuth:
 * `get_token.py`: Script OAuth 2.0 Web Server nhận token Google Drive & Google Sheets vĩnh viễn (Production).
   - Hỗ trợ tham số `--output <tên_file>` (mặc định `token.json`).
+* `nhan_token_server.py`: Webhook server lắng nghe callback OAuth trên cổng 8888 để tự động lưu token mới.
+* `DANG_NHAP_TAI_KHOAN_PHU.bat`: Batch file tiện ích giúp người dùng click để thêm nick Google Drive mới.
+
+### D. Cấu trúc thư mục gọn gàng (Organized Structure):
+* `backups/`: Chứa các file sao lưu JSON (`backup_reels2_reels3.json`, `backup_reels_sheet_old.json`, `pending_takhongngu.json`).
+* `legacy/`: Chứa các script migration, script phiên bản cũ (`yotubetosheetdrop2.py`, `fix_reels2_reels3.py`, `cleanup_sheet.py`, ...).
+* `tests/`: Chứa các script test đơn lẻ (`test_4_channels.py`, `testTiktok.py`, `test_pipeline.py`, ...).
+* `temp/`: Thư mục lưu tạm file video trong quá trình tải trước khi upload lên Drive.
 
 ---
 
@@ -86,9 +99,10 @@ Trong `drive_uploader.py`:
 ---
 
 ## 5. 📊 CẤU TRÚC GOOGLE SHEET (ID: `14tqKftTqlesnb0NqJZU-_f1EsWWywYqO36NiuDdmaTo`)
-* **Sheet `Reels`:** Video TikTok cũ (Dropbox).
+* **Sheet `Reels`:** Video YouTube Shorts & TikTok (Google Drive pool + Dropbox cũ).
 * **Sheet `Reels2`:** Video YouTube Shorts chính (Google Drive + Dropbox cũ).
 * **Sheet `Reels3`:** Video phân luồng mới / dự phòng (Google Drive).
+* **Sheet `Prother` (BẢO VỆ CỐ ĐỊNH):** Video đạm dinh dưỡng y học, lưu riêng trong thư mục Drive `Prother`, cấm xóa vĩnh viễn.
 
 ### 10 Cột Chuẩn:
 | Cột | Tên Cột | Mô tả |

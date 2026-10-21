@@ -13,11 +13,11 @@ if "%acc_num%"=="" set acc_num=2
 
 set token_name=token_drive%acc_num%.json
 echo.
-echo 📁 File token se duoc luu la: %token_name%
+echo 📁 File token se duoc luu vao: tokens\%token_name%
 echo 👉 Dang khoi dong trinh duyet...
 echo.
 
-python get_token.py --output %token_name%
+python tools\get_token.py --output %token_name%
 
 echo.
 echo ============================================================

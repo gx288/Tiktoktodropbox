@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Storage Pool & Auto Cleaner Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-main: #f9fafb;
+            --text-sub: #9ca3af;
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px 16px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Header */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-title h1 {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-title p {
+            color: var(--text-sub);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+        .refresh-pill {
+            background: #1f2937;
+            padding: 8px 14px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #374151;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Pool Overview */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .stat-card .val {
+            font-size: 28px;
+            font-weight: 800;
+        }
+        .stat-card .sub {
+            font-size: 12px;
+            margin-top: 6px;
+            color: var(--text-sub);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #1f2937;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 12px 0 6px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        /* Account Cards */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .account-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .account-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .account-email {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+        .token-name {
+            font-size: 11px;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+        .quota-stats {
+            display: flex;
+            justify-content: space-between;
+            background: #161f30;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .quota-stats span { color: var(--text-sub); }
+
+        /* Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-orange { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-purple { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+        /* Table */
+        .table-card {
+            overflow-x: auto;
+            margin-bottom: 32px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+        th {
+            padding: 12px 16px;
+            color: var(--text-sub);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            background: #161f30;
+        }
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        tr:last-child td { border-bottom: none; }
+        .pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pill-green { background: #064e3b; color: #6ee7b7; }
+        .pill-yellow { background: #78350f; color: #fde68a; }
+        .pill-blue { background: #1e3a8a; color: #93c5fd; }
+        .pill-gray { background: #374151; color: #d1d5db; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-sub);
+            padding: 24px 0 12px 0;
+            border-top: 1px solid var(--border-color);
+        }
+        .footer a { color: var(--primary-light); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <h1>⚡ Multi-Drive Pool & Reels Cleaner</h1>
+                <p>Hệ thống giám sát dung lượng Google Drive và tự động dọn dẹp video đã đăng</p>
+            </div>
+            <div class="header-meta">
+                <div class="refresh-pill">
+                    <div class="live-dot"></div>
+                    <span>Cập nhật: <strong id="last-update">21/10/2026 10:33:20</strong></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Overview Stats -->
+        <section class="overview-grid">
+            <div class="card stat-card">
+                <div class="label">TỔNG BỘ NHỚ MULTI-DRIVE</div>
+                <div class="val" style="color: #60a5fa;">60.0 <span style="font-size: 16px;">GB</span></div>
+                <div class="sub">Gộp từ 4 tài khoản Google Drive</div>
+            </div>
+            <div class="card stat-card">
+                <div class="label">DUNG LƯỢNG ĐÃ DÙNG</div>
+                <div class="val" style="color: #f59e0b;">6.14 <span style="font-size: 16px;">GB</span></div>
+                <div class="sub">Tỷ lệ sử dụng: 10.2%</div>
+            </div>
+            <div class="card stat-card">
+                <div class="label">DUNG LƯỢNG CÒN TRỐNG</div>
+                <div class="val" style="color: #10b981;">53.86 <span style="font-size: 16px;">GB</span></div>
+                <div class="sub">Sẵn sàng lưu thêm hàng trăm video</div>
+            </div>
+            <div class="card stat-card">
+                <div class="label">TRẠNG THÁI DỌN DẸP GẦN NHẤT</div>
+                <div class="val" style="font-size: 20px; color: #a78bfa;">0 Drive / 40 Dbx</div>
+                <div class="sub">Lúc: 2026-10-21 10:33:20</div>
+            </div>
+        </section>
+
+        <!-- Google Drive Accounts Breakdown -->
+        <h2 class="section-title">📁 Chi tiết 4 tài khoản Google Drive Storage Pool</h2>
+        <section class="accounts-grid">
+            
+        <div class="card account-card">
+            <div class="card-header">
+                <div class="account-meta">
+                    <div class="avatar">LE</div>
+                    <div>
+                        <div class="account-email">lehungpharmacist5@gmail.com</div>
+                        <div class="token-name">token.json</div>
+                    </div>
+                </div>
+                <span class="badge badge-green">Sẵn sàng</span>
+            </div>
+            <div class="quota-stats">
+                <div><span>Đã dùng:</span> <strong>6.12 GB</strong></div>
+                <div><span>Còn trống:</span> <strong>8.88 GB</strong></div>
+                <div><span>Tổng:</span> <strong>15.0 GB</strong></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 40.8%; background-color: #10b981;"></div>
+            </div>
+            <div class="progress-label">
+                <span>40.8% đã dùng</span>
+                <span>8.88 GB trống</span>
+            </div>
+        </div>
+        
+        <div class="card account-card">
+            <div class="card-header">
+                <div class="account-meta">
+                    <div class="avatar">VI</div>
+                    <div>
+                        <div class="account-email">vietduc19978@gmail.com</div>
+                        <div class="token-name">token_drive2.json</div>
+                    </div>
+                </div>
+                <span class="badge badge-green">Sẵn sàng</span>
+            </div>
+            <div class="quota-stats">
+                <div><span>Đã dùng:</span> <strong>0.01 GB</strong></div>
+                <div><span>Còn trống:</span> <strong>14.99 GB</strong></div>
+                <div><span>Tổng:</span> <strong>15.0 GB</strong></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0.1%; background-color: #10b981;"></div>
+            </div>
+            <div class="progress-label">
+                <span>0.1% đã dùng</span>
+                <span>14.99 GB trống</span>
+            </div>
+        </div>
+        
+        <div class="card account-card">
+            <div class="card-header">
+                <div class="account-meta">
+                    <div class="avatar">LE</div>
+                    <div>
+                        <div class="account-email">lehunghup2@gmail.com</div>
+                        <div class="token-name">token_drive3.json</div>
+                    </div>
+                </div>
+                <span class="badge badge-green">Sẵn sàng</span>
+            </div>
+            <div class="quota-stats">
+                <div><span>Đã dùng:</span> <strong>0.0 GB</strong></div>
+                <div><span>Còn trống:</span> <strong>15.0 GB</strong></div>
+                <div><span>Tổng:</span> <strong>15.0 GB</strong></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0.0%; background-color: #10b981;"></div>
+            </div>
+            <div class="progress-label">
+                <span>0.0% đã dùng</span>
+                <span>15.0 GB trống</span>
+            </div>
+        </div>
+        
+        <div class="card account-card">
+            <div class="card-header">
+                <div class="account-meta">
+                    <div class="avatar">LE</div>
+                    <div>
+                        <div class="account-email">lehungpharmacist6@gmail.com</div>
+                        <div class="token-name">token_drive4.json</div>
+                    </div>
+                </div>
+                <span class="badge badge-green">Sẵn sàng</span>
+            </div>
+            <div class="quota-stats">
+                <div><span>Đã dùng:</span> <strong>0.01 GB</strong></div>
+                <div><span>Còn trống:</span> <strong>14.99 GB</strong></div>
+                <div><span>Tổng:</span> <strong>15.0 GB</strong></div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0.0%; background-color: #10b981;"></div>
+            </div>
+            <div class="progress-label">
+                <span>0.0% đã dùng</span>
+                <span>14.99 GB trống</span>
+            </div>
+        </div>
+        
+        </section>
+
+        <!-- Google Sheets Status -->
+        <h2 class="section-title">📊 Trạng thái Video trên Google Sheets</h2>
+        <section class="card table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên Sheet</th>
+                        <th>Chế độ dọn dẹp</th>
+                        <th>Sẵn sàng đăng</th>
+                        <th>Chờ tải</th>
+                        <th>Đã đăng FB</th>
+                        <th>Đã xóa Cloud</th>
+                        <th>Tổng dòng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr>
+            <td><strong>Reels</strong></td>
+            <td><span class="badge badge-blue">Tự động xóa</span></td>
+            <td><span class="pill pill-green">460</span></td>
+            <td><span class="pill pill-yellow">361</span></td>
+            <td><span class="pill pill-blue">30</span></td>
+            <td><span class="pill pill-gray">30</span></td>
+            <td><strong>821</strong></td>
+        </tr>
+        
+        <tr>
+            <td><strong>Reels2</strong></td>
+            <td><span class="badge badge-blue">Tự động xóa</span></td>
+            <td><span class="pill pill-green">409</span></td>
+            <td><span class="pill pill-yellow">0</span></td>
+            <td><span class="pill pill-blue">76</span></td>
+            <td><span class="pill pill-gray">5</span></td>
+            <td><strong>409</strong></td>
+        </tr>
+        
+        <tr>
+            <td><strong>Reels3</strong></td>
+            <td><span class="badge badge-blue">Tự động xóa</span></td>
+            <td><span class="pill pill-green">57</span></td>
+            <td><span class="pill pill-yellow">2</span></td>
+            <td><span class="pill pill-blue">1</span></td>
+            <td><span class="pill pill-gray">1</span></td>
+            <td><strong>59</strong></td>
+        </tr>
+        
+        <tr>
+            <td><strong>Prother</strong></td>
+            <td><span class="badge badge-purple">🔒 Bảo vệ vĩnh viễn</span></td>
+            <td><span class="pill pill-green">8</span></td>
+            <td><span class="pill pill-yellow">0</span></td>
+            <td><span class="pill pill-blue">0</span></td>
+            <td><span class="pill pill-gray">0</span></td>
+            <td><strong>8</strong></td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Hệ thống tự động hóa Make.com & Google Drive Multi-Pool • Tự động dọn dẹp bảo vệ dung lượng</p>
+            <p style="margin-top: 6px; font-size: 11px;">Trang web tự động cập nhật định kỳ qua GitHub Actions.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Tự động tải lại trang sau mỗi 60 giây để cập nhật trạng thái mới nhất
+        setTimeout(function() {
+            window.location.reload();
+        }, 60000);
+    </script>
+</body>
+</html>

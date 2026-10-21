@@ -1,0 +1,110 @@
+{
+  "pool": {
+    "accounts": [
+      {
+        "token_file": "token.json",
+        "email": "lehungpharmacist5@gmail.com",
+        "photo": "https://lh3.googleusercontent.com/a/ACg8ocLvJ7q1Szb3JNyUdIJOgJqgTLqwxltjiLRdWQ0fxOZ4oUYCmw=s64",
+        "limit_gb": 15.0,
+        "usage_gb": 6.12,
+        "free_gb": 8.88,
+        "percent": 40.8,
+        "status": "Sẵn sàng",
+        "status_color": "green"
+      },
+      {
+        "token_file": "token_drive2.json",
+        "email": "vietduc19978@gmail.com",
+        "photo": "https://lh3.googleusercontent.com/a/ACg8ocLgEaFiyn7uf1yC1veFVwohEwf4EUdieS7GG8sw-qeQGEajLA=s64",
+        "limit_gb": 15.0,
+        "usage_gb": 0.01,
+        "free_gb": 14.99,
+        "percent": 0.1,
+        "status": "Sẵn sàng",
+        "status_color": "green"
+      },
+      {
+        "token_file": "token_drive3.json",
+        "email": "lehunghup2@gmail.com",
+        "photo": "https://lh3.googleusercontent.com/a/ACg8ocL4kHdSDF-xc0gsQ8zg8-57JwKxbNHLGijPWRuC1fxG_a31Ng=s64",
+        "limit_gb": 15.0,
+        "usage_gb": 0.0,
+        "free_gb": 15.0,
+        "percent": 0.0,
+        "status": "Sẵn sàng",
+        "status_color": "green"
+      },
+      {
+        "token_file": "token_drive4.json",
+        "email": "lehungpharmacist6@gmail.com",
+        "photo": "https://lh3.googleusercontent.com/a/ACg8ocKkQuwpSK13hDZLuqNUKog3Y_bnVglIes-MJaTMAqWD9MFknw=s64",
+        "limit_gb": 15.0,
+        "usage_gb": 0.01,
+        "free_gb": 14.99,
+        "percent": 0.0,
+        "status": "Sẵn sàng",
+        "status_color": "green"
+      }
+    ],
+    "total_limit_gb": 60.0,
+    "total_usage_gb": 6.14,
+    "total_free_gb": 53.86,
+    "total_percent": 10.2,
+    "account_count": 4
+  },
+  "sheets": {
+    "Reels": {
+      "total": 821,
+      "ready": 460,
+      "posted": 30,
+      "cleaned": 30,
+      "pending": 361,
+      "protected": false
+    },
+    "Reels2": {
+      "total": 409,
+      "ready": 409,
+      "posted": 76,
+      "cleaned": 5,
+      "pending": 0,
+      "protected": false
+    },
+    "Reels3": {
+      "total": 59,
+      "ready": 57,
+      "posted": 1,
+      "cleaned": 1,
+      "pending": 2,
+      "protected": false
+    },
+    "Prother": {
+      "total": 8,
+      "ready": 8,
+      "posted": 0,
+      "cleaned": 0,
+      "pending": 0,
+      "protected": true
+    }
+  },
+  "cleanup": {
+    "status": "success",
+    "gdrive_deleted": 0,
+    "dropbox_deleted": 40,
+    "sheets": {
+      "Reels": {
+        "gdrive": 0,
+        "dropbox": 0
+      },
+      "Reels2": {
+        "gdrive": 0,
+        "dropbox": 40
+      },
+      "Reels3": {
+        "gdrive": 0,
+        "dropbox": 0
+      }
+    },
+    "timestamp": "2026-10-21 10:33:20"
+  },
+  "updated_at": "2026-10-21 10:29:58"
+}
