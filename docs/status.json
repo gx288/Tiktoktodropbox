@@ -6,9 +6,9 @@
         "email": "lehungpharmacist5@gmail.com",
         "photo": "https://lh3.googleusercontent.com/a/ACg8ocLvJ7q1Szb3JNyUdIJOgJqgTLqwxltjiLRdWQ0fxOZ4oUYCmw=s64",
         "limit_gb": 15.0,
-        "usage_gb": 6.33,
-        "free_gb": 8.67,
-        "percent": 42.2,
+        "usage_gb": 6.79,
+        "free_gb": 8.21,
+        "percent": 45.3,
         "status": "Sẵn sàng",
         "status_color": "green"
       },
@@ -47,18 +47,18 @@
       }
     ],
     "total_limit_gb": 60.0,
-    "total_usage_gb": 6.35,
-    "total_free_gb": 53.65,
-    "total_percent": 10.6,
+    "total_usage_gb": 6.81,
+    "total_free_gb": 53.19,
+    "total_percent": 11.4,
     "account_count": 4
   },
   "sheets": {
     "Reels": {
-      "total": 821,
-      "ready": 590,
-      "posted": 30,
-      "cleaned": 30,
-      "pending": 231,
+      "total": 838,
+      "ready": 838,
+      "posted": 31,
+      "cleaned": 31,
+      "pending": 0,
       "protected": false
     },
     "Reels2": {
@@ -104,7 +104,7 @@
         "dropbox": 0
       }
     },
-    "timestamp": "2026-10-21 03:41:21"
+    "timestamp": "2026-10-21 11:05:01"
   },
-  "updated_at": "2026-10-21 03:41:17"
+  "updated_at": "2026-10-21 11:04:56"
 }
