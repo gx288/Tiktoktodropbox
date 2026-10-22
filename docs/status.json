@@ -6,9 +6,9 @@
         "email": "lehungpharmacist5@gmail.com",
         "photo": "https://lh3.googleusercontent.com/a/ACg8ocLvJ7q1Szb3JNyUdIJOgJqgTLqwxltjiLRdWQ0fxOZ4oUYCmw=s64",
         "limit_gb": 15.0,
-        "usage_gb": 6.96,
-        "free_gb": 8.04,
-        "percent": 46.4,
+        "usage_gb": 7.01,
+        "free_gb": 7.99,
+        "percent": 46.7,
         "status": "Sẵn sàng",
         "status_color": "green"
       },
@@ -17,8 +17,8 @@
         "email": "vietduc19978@gmail.com",
         "photo": "https://lh3.googleusercontent.com/a/ACg8ocLgEaFiyn7uf1yC1veFVwohEwf4EUdieS7GG8sw-qeQGEajLA=s64",
         "limit_gb": 15.0,
-        "usage_gb": 0.01,
-        "free_gb": 14.99,
+        "usage_gb": 0.02,
+        "free_gb": 14.98,
         "percent": 0.1,
         "status": "Sẵn sàng",
         "status_color": "green"
@@ -47,25 +47,25 @@
       }
     ],
     "total_limit_gb": 60.0,
-    "total_usage_gb": 6.98,
-    "total_free_gb": 53.02,
-    "total_percent": 11.6,
+    "total_usage_gb": 7.04,
+    "total_free_gb": 52.96,
+    "total_percent": 11.7,
     "account_count": 4
   },
   "sheets": {
     "Reels": {
       "total": 838,
       "ready": 838,
-      "posted": 37,
-      "cleaned": 35,
+      "posted": 41,
+      "cleaned": 37,
       "pending": 0,
       "protected": false
     },
     "Reels2": {
       "total": 409,
       "ready": 409,
-      "posted": 85,
-      "cleaned": 83,
+      "posted": 87,
+      "cleaned": 85,
       "pending": 0,
       "protected": false
     },
@@ -89,11 +89,11 @@
   "cleanup": {
     "status": "success",
     "gdrive_deleted": 0,
-    "dropbox_deleted": 4,
+    "dropbox_deleted": 6,
     "sheets": {
       "Reels": {
         "gdrive": 0,
-        "dropbox": 2
+        "dropbox": 4
       },
       "Reels2": {
         "gdrive": 0,
@@ -104,7 +104,7 @@
         "dropbox": 0
       }
     },
-    "timestamp": "2026-10-22 01:09:47"
+    "timestamp": "2026-10-22 06:20:28"
   },
-  "updated_at": "2026-10-22 01:09:39"
+  "updated_at": "2026-10-22 06:20:17"
 }
