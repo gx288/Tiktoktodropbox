@@ -64,8 +64,8 @@
     "Reels2": {
       "total": 409,
       "ready": 409,
-      "posted": 105,
-      "cleaned": 104,
+      "posted": 108,
+      "cleaned": 105,
       "pending": 0,
       "protected": false
     },
@@ -89,7 +89,7 @@
   "cleanup": {
     "status": "success",
     "gdrive_deleted": 0,
-    "dropbox_deleted": 1,
+    "dropbox_deleted": 3,
     "sheets": {
       "Reels": {
         "gdrive": 0,
@@ -97,14 +97,14 @@
       },
       "Reels2": {
         "gdrive": 0,
-        "dropbox": 1
+        "dropbox": 3
       },
       "Reels3": {
         "gdrive": 0,
         "dropbox": 0
       }
     },
-    "timestamp": "2026-10-24 09:15:58"
+    "timestamp": "2026-10-24 13:27:50"
   },
-  "updated_at": "2026-10-24 09:15:54"
+  "updated_at": "2026-10-24 13:27:45"
 }
